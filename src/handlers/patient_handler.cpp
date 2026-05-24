@@ -103,3 +103,23 @@ std::string SearchPatientHandler::HandleRequestThrow(
 }
 
 }  // namespace medical_api
+
+// В начало SearchPatientHandler::HandleRequestThrow добавить:
+
+    // Проверяем кеш
+    auto cache = RepositoryFactory::GetCacheService();
+    std::string cache_key = "patients:search:" + fullName;
+    
+    if (cache) {
+        auto cached = cache->Get(cache_key);
+        if (cached.has_value()) {
+            return cached.value();
+        }
+    }
+    
+    // ... существующий код поиска ...
+    
+    // Перед return сохраняем в кеш:
+    if (cache) {
+        cache->Set(cache_key, result_json, std::chrono::seconds(300)); // 5 минут TTL
+    }
